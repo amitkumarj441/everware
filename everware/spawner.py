@@ -30,6 +30,14 @@ from .git_executor import GitExecutor
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
+    @gen.coroutine
+    def prepare_local_repo(self):
+        yield self.git('clone', self._processed_repo_url, self._repo_dir)
+        repo = git.Repo(self._repo_dir)
+        repo.git.reset('--hard', self._repo_pointer)
+        self._repo_sha = repo.rev_parse('HEAD')
+        self._branch_name = repo.active_branch.name
+
 class CustomDockerSpawner(DockerSpawner):
     def __init__(self, **kwargs):
         self._user_log = []
@@ -201,9 +209,11 @@ class CustomDockerSpawner(DockerSpawner):
 
         tmp_dir = mkdtemp(suffix='-everware')
         self.git_executor = GitExecutor(self.form_repo_url, tmp_dir)
+        self.parse_url(self.form_repo_url, tmp_dir)
         self._add_to_log('Cloning repository %s' % self.repo_url)
         self.log.info('Cloning repo %s' % self.repo_url)
         yield self.git_executor.exec()
+        yield self.prepare_local_repo()
         # use git repo URL and HEAD commit sha to derive
         # the image name
 
