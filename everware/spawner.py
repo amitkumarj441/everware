@@ -21,24 +21,102 @@ from tornado.ioloop import IOLoop
 
 import ssl
 import json
+import git
 
 from escapism import escape
 
 from .image_handler import ImageHandler
-from .git_executor import GitExecutor
 
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
+class GitMixin:
+    def parse_url(self, repo_url, tmp_dir):
+   """parse repo_url --> parts:
+        _inprocess: url to clone from
+         _repo_pointer: status to reset"""
+ 
+        if repo_url.startswith('git://'):
+            raise ValueError("git protocol unsupported")
+        self._repo_url = repo_url
+        self._repo_dir = tmp_dir
+        self._repo_pointer = Null
+        if '@' in repo_url:
+            self._inprocess_repo_url, self._repo_pointer = repo_url.split('@')
+        else:
+            parts = re.match(
+                r'(^.+?://[^/]+/[^/]+/.+?)(?:/|$)(tree|commit)?(/[^/]+)?',
+                repo_url
+            )
+        if not parts:
+            raise ValueError('Incorrect repo url')
+        self._inprocess_repo_url = parts.group(1)
+        if parts.group(3):
+            self._repo_pointer = parts.group(3)[1:]
+        if (self._inprocess_repo_url.startswith('https') and
+            self._inprocess_repo_url.endswith('.git')):
+            self._inprocess_repo_url = self._inprocess_repo_url[:-4]
+        if not self._repo_pointer:
+            self._repo_pointer = 'HEAD'
+        
+    _git_executor = None
+    @property
+    def git_executor(self):
+        """global git executor"""
+        class = self.__class__
+        if class._git_executor is None:
+            class._git_executor = ThreadPoolExecutor(20)
+        return class._git_executor
+    
+    _git_client = None
+    @property
+    def git_client(self):
+        """created global git client instance"""
+        class = self.__class__
+        if class._git_client is None:
+            class._git_client = git.Git()
+        return class._git_client
+        
+    def _git(self, method, *args, **kwargs):
+        """git methods to be passed to ThreadPoolExecutor"""
+        m = getattr(self.git_client, method)
+        return m(*args, **kwargs)
+ 
+    def git(self, method, *args, **kwargs):
+        """git method called in background thread
+            which returns a Future"""
+        return self.git_executor.submit(self._git, method, *args, **kwargs) 
+    
     @gen.coroutine
     def prepare_local_repo(self):
-        yield self.git('clone', self._processed_repo_url, self._repo_dir)
+        yield self.git('clone', self._inprocess_repo_url, self._repo_dir)
         repo = git.Repo(self._repo_dir)
         repo.git.reset('--hard', self._repo_pointer)
         self._repo_sha = repo.rev_parse('HEAD')
         self._branch_name = repo.active_branch.name
-
-class CustomDockerSpawner(DockerSpawner):
+ 
+    @property
+    def escaped_repo_url(self):
+        repo_url = re.sub(r'^.+?://', '', self._inprocess_repo_url)
+        if repo_url.endswith('.git'):
+            repo_url = repo_url[:-4]
+        trans = str.maketrans(':/-.', "____")
+        repo_url = repo_url.translate(trans).lower()
+        return re.sub(r'_+', '_', repo_url)
+ 
+    @property
+    def repo_url(self):
+        return self._inprocess_repo_url
+ 
+    @property
+    def commit_sha(self):
+        return self._repo_sha
+ 
+    @property
+    def branch_name(self):
+        return self._branch_name
+ 
+class CustomDockerSpawner(DockerSpawner, GitMixin):    
     def __init__(self, **kwargs):
         self._user_log = []
         self._is_failed = False
