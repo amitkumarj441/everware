@@ -5,21 +5,30 @@
 
 {% block main %}
 {% block login %}
-<div id="login-main">
-<header class="jumbotron masthead">
-    <h1>everware</h1>
-    <p>Sharing is caring</p>
-</header>
 
 <div class="container">
 {% if custom_html %}
 {{ custom_html }}
 {% elif login_service %}
+
+<div class="mdl-cell">
+  <a href="https://github.com/everware">Everware</a> allows you to launch
+  interactive Jupyter notebooks right here in your browser. You can check out
+  someone else's research code, run it, make changes, and contribute them back.
+  You can customize the environment that your notebooks runs in by creating a
+  Dockerfile.
+</div>
+<div class="mdl-cell">
+  Currently Everware is in private beta, if you are interested in
+  trying it out:
+  <a href="http://goo.gl/forms/vbZXgYgj3N">join the waiting list</a>.
+</div>
+
 <div class="service-login">
   {% if repo_url %}
-  <a class='btn btn-github btn-lg' href='oauth_login?repo_url={{repo_url}}'>
+  <a class='mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored' href='oauth_login?repo_url={{repo_url}}'>
   {% else %}
-  <a class='btn btn-github btn-lg' href='oauth_login'>
+  <a class='mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored' href='oauth_login'>
   {% endif %}
     Sign in with {{login_service}}
   </a>
@@ -32,16 +41,6 @@
       {{login_error}}
     </p>
     {% endif %}
-    <!--div class="form-group">
-        <input
-          type="text"
-          class="form-control"
-          name="repourl"
-          id="repo_input"
-          tabindex="1"
-          placeholder="URL of git repository"
-        />
-    </div-->
     <div class="form-group">
       <label class="col-sm-3 control-label" for="username_input">Username</label>
       <div class="col-sm-8">
@@ -81,35 +80,9 @@
 </form>
 {% endif %}
 
-<div class="container">
-  <div class="row row-centered">
-    <div class="col-sm-6" style="float:none; margin:0 auto">
-      <a href="https://github.com/everware">Everware</a> is a
-      project that allows you to edit and run someone else's code with one
-      click. Even if that code has complicated setup instructions. The main
-      aim of the project is to encourage reuse of software between
-      researchers.
-    </div>
-    <div class="col-sm-6" style="float:none; margin:0 auto">
-      Currently Everware is in private beta, if you are interested in
-      trying it out:
-      <a href="http://goo.gl/forms/vbZXgYgj3N">join the waiting list</a>.
-      
-    </div>
-  </div>
-</div>
-
 </div>
 </div>
 {% endblock login %}
-
-<footer class="footer">
-<div class="container">
-    <div class="col-sm-12">
-        Powered by <a href="https://jupyter.org/">Jupyter</a> and <a href="https://www.docker.com/">Docker</a>
-    </div>
-</div>
-</footer>
 
 {% endblock %}
 

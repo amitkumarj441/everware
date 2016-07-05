@@ -1,0 +1,43 @@
+
+.everware-content {
+    margin-left: 5%;
+    margin-top: 120px;
+    width: 100%;
+}
+
+.everware-logo {
+    position: absolute;
+    /*left: 20px;*/
+    top: 20px;
+}
+
+.everware-logo h1 {
+    float: right;
+    position: relative;
+    top: -5px;
+    left: -5px;
+}
+
+.everware-logo img {
+    float: left;
+    width: 90px;
+    height: 90px;
+}
+
+.everware-footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 20px 8px;
+    float: left;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+}
+
+a:hover {
+    text-decoration: none;
+}
+a {
+    text-decoration: none;
+}
